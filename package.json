@@ -9,7 +9,7 @@
     "url": "https://github.com/kongtaoxing/json-len.git"
   },
   "engines": {
-    "vscode": "^1.90.0"
+    "vscode": "^1.98.0"
   },
   "categories": [
     "Other"
