@@ -5,6 +5,30 @@ import * as vscode from 'vscode';
 let arrayLengthDecorator: vscode.TextEditorDecorationType;
 let fileSizeDecorator: vscode.TextEditorDecorationType;
 
+// 添加配置接口
+interface JsonLenConfiguration {
+	maxFileSize: number;
+	fileSizeUnit: 'KB' | 'MB' | 'GB';
+}
+
+// 添加语言相关的消息配置
+const messages = {
+	'zh-cn': {
+		sizeWarning: (fileSize: string, maxSize: number, unit: string) => 
+			`文件大小 (${fileSize}) 超过设定阈值 (${maxSize}${unit})。是否继续渲染数组长度？`,
+		continue: '继续',
+		cancel: '取消',
+		openSettings: '打开设置'
+	},
+	'en': {
+		sizeWarning: (fileSize: string, maxSize: number, unit: string) => 
+			`File size (${fileSize}) exceeds threshold (${maxSize}${unit}). Continue rendering array lengths?`,
+		continue: 'Continue',
+		cancel: 'Cancel',
+		openSettings: 'Open Settings'
+	}
+};
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -51,7 +75,7 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 }
 
-function updateDecorations() {
+async function updateDecorations() {
 	const editor = vscode.window.activeTextEditor;
 	if (!editor || editor.document.languageId !== 'json') {
 		console.log('不是 JSON 文件或没有活动编辑器');
@@ -63,9 +87,17 @@ function updateDecorations() {
 	const fileSizeDecorations: vscode.DecorationOptions[] = [];
 
 	try {
-		// 添加文件大小信息
 		const fileSize = Buffer.from(text).length;
-		console.log('文件大小：', fileSize);
+		const config = vscode.workspace.getConfiguration('jsonLen');
+		const maxFileSize = config.get<number>('maxFileSize') || 100;
+		const fileSizeUnit = config.get<'KB' | 'MB' | 'GB'>('fileSizeUnit') || 'MB';
+		
+		// 转换阈值为字节
+		const threshold = maxFileSize * (fileSizeUnit === 'KB' ? 1024 : 
+									  fileSizeUnit === 'MB' ? 1024 * 1024 : 
+									  1024 * 1024 * 1024);
+
+		// 添加文件大小信息到第一行
 		const sizeLine = editor.document.lineAt(0);
 		fileSizeDecorations.push({
 			range: sizeLine.range,
@@ -75,6 +107,31 @@ function updateDecorations() {
 				}
 			}
 		});
+
+		// 检查文件大小是否超过阈值
+		if (fileSize > threshold) {
+			// 获取 VSCode 的语言设置
+			const currentLanguage = vscode.env.language.toLowerCase();
+			// 选择语言配置，如果不是中文则使用英文
+			const lang = currentLanguage.startsWith('zh') ? 'zh-cn' : 'en';
+			const msg = messages[lang];
+
+			const answer = await vscode.window.showWarningMessage(
+				msg.sizeWarning(formatFileSize(fileSize), maxFileSize, fileSizeUnit),
+				msg.continue,
+				msg.cancel,
+				msg.openSettings
+			);
+
+			if (answer === msg.openSettings) {
+				vscode.commands.executeCommand('workbench.action.openSettings', 'jsonLen');
+				editor.setDecorations(fileSizeDecorator, fileSizeDecorations);
+				return;
+			} else if (answer !== msg.continue) {
+				editor.setDecorations(fileSizeDecorator, fileSizeDecorations);
+				return;
+			}
+		}
 
 		// 检查文本是否为空或只包含空白字符
 		if (text.trim()) {

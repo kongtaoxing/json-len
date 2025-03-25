@@ -1,0 +1,4 @@
+{
+    "config.maxFileSize.description": "数组长度渲染的最大文件大小",
+    "config.fileSizeUnit.description": "最大文件大小的单位"
+} 

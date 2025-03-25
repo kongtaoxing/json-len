@@ -19,7 +19,22 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": []
+    "configuration": {
+      "title": "JSON Length Viewer",
+      "properties": {
+        "jsonLen.maxFileSize": {
+          "type": "number",
+          "default": 10,
+          "markdownDescription": "%config.maxFileSize.description%"
+        },
+        "jsonLen.fileSizeUnit": {
+          "type": "string",
+          "enum": ["KB", "MB", "GB"],
+          "default": "MB",
+          "markdownDescription": "%config.fileSizeUnit.description%"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
