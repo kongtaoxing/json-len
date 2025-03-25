@@ -2,7 +2,7 @@
   "name": "json-len",
   "displayName": "json-len",
   "description": "Show length of json array.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "icon": "images/icon.png",
   "repository": {
     "type": "git",
