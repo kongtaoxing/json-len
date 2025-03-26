@@ -40,13 +40,14 @@ export function activate(context: vscode.ExtensionContext) {
 	arrayLengthDecorator = vscode.window.createTextEditorDecorationType({
 		after: {
 			color: new vscode.ThemeColor('editorLineNumber.foreground'),
-			margin: '0 0 0 1em'
+			margin: '0 0.1em 0 0.1em'
 		}
 	});
 
 	fileSizeDecorator = vscode.window.createTextEditorDecorationType({
 		after: {
-			color: new vscode.ThemeColor('editorLineNumber.foreground')
+			color: new vscode.ThemeColor('editorLineNumber.foreground'),
+			// margin: '0 0.1em'
 		}
 	});
 
@@ -143,7 +144,7 @@ async function updateDecorations() {
 				// 修改后的递归函数
 				const findArrays = (obj: any, startOffset: number) => {
 					if (Array.isArray(obj)) {
-						const arrayStr = JSON.stringify(obj, null, 2);
+						// 获取当前数组的起始位置
 						const pos = editor.document.positionAt(startOffset);
 						const line = editor.document.lineAt(pos.line);
 						const bracketIndex = line.text.indexOf('[');
@@ -160,24 +161,46 @@ async function updateDecorations() {
 						}
 
 						// 处理数组中的每个元素
-						obj.forEach((item: any) => {
+						let currentOffset = startOffset;
+						for (let i = 0; i < obj.length; i++) {
+							const item = obj[i];
 							if (item && typeof item === 'object') {
-								const itemStr = JSON.stringify(item, null, 2);
-								const itemOffset = text.indexOf(itemStr, startOffset);
-								if (itemOffset !== -1) {
-									findArrays(item, itemOffset);
+								// 查找下一个对象或数组的开始位置
+								const searchStr = i === 0 ? '[' : ',';
+								currentOffset = text.indexOf(searchStr, currentOffset) + 1;
+								// 跳过空白字符和引号
+								while (currentOffset < text.length && (/\s/.test(text[currentOffset]) || text[currentOffset] === '"')) {
+									currentOffset++;
 								}
+
+								// 如果是数组，查找实际的 '[' 位置
+								if (Array.isArray(item)) {
+									const nextBracket = text.indexOf('[', currentOffset);
+									if (nextBracket !== -1) {
+										currentOffset = nextBracket;
+									}
+								}
+
+								findArrays(item, currentOffset);
 							}
-						});
+						}
 					} else if (obj && typeof obj === 'object') {
 						// 处理对象的每个属性
+						let currentOffset = startOffset;
 						for (const key in obj) {
 							const value = obj[key];
 							if (value && typeof value === 'object') {
-								const valueStr = JSON.stringify(value, null, 2);
-								const valueOffset = text.indexOf(valueStr, startOffset);
-								if (valueOffset !== -1) {
-									findArrays(value, valueOffset);
+								// 查找属性值的开始位置
+								const keyStr = `"${key}"`;
+								currentOffset = text.indexOf(keyStr, currentOffset);
+								if (currentOffset !== -1) {
+									// 找到冒号后的位置
+									currentOffset = text.indexOf(':', currentOffset) + 1;
+									// 跳过空白字符
+									while (currentOffset < text.length && /\s/.test(text[currentOffset])) {
+										currentOffset++;
+									}
+									findArrays(value, currentOffset);
 								}
 							}
 						}

@@ -4,6 +4,12 @@ All notable changes to the "json-len" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.0.4] - 2025-03-26
+
+### Fixed
+
+- Nested arrays not showing array length
+
 ## [0.0.3] - 2025-03-25
 
 ### Added
