@@ -2,7 +2,7 @@
   "name": "json-len",
   "displayName": "json-len",
   "description": "Show length of json array.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "icon": "images/icon.png",
   "repository": {
     "type": "git",
@@ -29,7 +29,11 @@
         },
         "jsonLen.fileSizeUnit": {
           "type": "string",
-          "enum": ["KB", "MB", "GB"],
+          "enum": [
+            "KB",
+            "MB",
+            "GB"
+          ],
           "default": "MB",
           "markdownDescription": "%config.fileSizeUnit.description%"
         }
