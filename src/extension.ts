@@ -144,21 +144,17 @@ async function updateDecorations() {
 				// 修改后的递归函数
 				const findArrays = (obj: any, startOffset: number) => {
 					if (Array.isArray(obj)) {
-						// 获取当前数组的起始位置
+						// 获取当前数组的准确位置
 						const pos = editor.document.positionAt(startOffset);
-						const line = editor.document.lineAt(pos.line);
-						const bracketIndex = line.text.indexOf('[');
 						
-						if (bracketIndex !== -1) {
-							arrayDecorations.push({
-								range: new vscode.Range(pos.line, bracketIndex + 1, pos.line, bracketIndex + 1),
-								renderOptions: {
-									after: {
-										contentText: ` (${obj.length} items)`
-									}
+						arrayDecorations.push({
+							range: new vscode.Range(pos.line, pos.character + 1, pos.line, pos.character + 1),
+							renderOptions: {
+								after: {
+									contentText: `(${obj.length} items)`
 								}
-							});
-						}
+							}
+						});
 
 						// 处理数组中的每个元素
 						let currentOffset = startOffset;
