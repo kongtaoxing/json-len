@@ -4,6 +4,11 @@ All notable changes to the "json-len" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.0.5] - 2025-04-18
+
+### Fixed
+- Fix the issue that the extension was working bad in some cases
+
 ## [0.0.4] - 2025-03-26
 
 ### Fixed
