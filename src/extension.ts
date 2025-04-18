@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import { parseTree, findNodeAtLocation } from 'jsonc-parser';
 
 let arrayLengthDecorator: vscode.TextEditorDecorationType;
 let fileSizeDecorator: vscode.TextEditorDecorationType;
@@ -45,7 +46,7 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	fileSizeDecorator = vscode.window.createTextEditorDecorationType({
-		after: {
+		before: {
 			color: new vscode.ThemeColor('editorLineNumber.foreground'),
 			// margin: '0 0.1em'
 		}
@@ -98,13 +99,12 @@ async function updateDecorations() {
 									  fileSizeUnit === 'MB' ? 1024 * 1024 : 
 									  1024 * 1024 * 1024);
 
-		// 添加文件大小信息到第一行
-		const sizeLine = editor.document.lineAt(0);
+		// 添加文件大小信息到虚拟行
 		fileSizeDecorations.push({
-			range: sizeLine.range,
+			range: new vscode.Range(0, 0, 0, 0),
 			renderOptions: {
-				after: {
-					contentText: `  (${formatFileSize(fileSize)})`
+				before: {
+					contentText: `(${formatFileSize(fileSize)})\n`,
 				}
 			}
 		});
@@ -137,74 +137,41 @@ async function updateDecorations() {
 		// 检查文本是否为空或只包含空白字符
 		if (text.trim()) {
 			try {
-				console.log('尝试解析 JSON：', text.substring(0, 100) + '...');  // 只显示前100个字符
-				const jsonContent = JSON.parse(text);
-				console.log('JSON 解析成功');
-
-				// 修改后的递归函数
-				const findArrays = (obj: any, startOffset: number) => {
-					if (Array.isArray(obj)) {
-						// 获取当前数组的准确位置
-						const pos = editor.document.positionAt(startOffset);
-						
-						arrayDecorations.push({
-							range: new vscode.Range(pos.line, pos.character + 1, pos.line, pos.character + 1),
-							renderOptions: {
-								after: {
-									contentText: `(${obj.length} items)`
-								}
+				// 使用 jsonc-parser 解析 JSON 并获取 AST
+				const tree = parseTree(text);
+				if (tree) {
+					const processNode = (node: any) => {
+						if (node.type === 'array') {
+							// 获取数组的起始位置
+							const pos = editor.document.positionAt(node.offset);
+							// 计算数组的长度
+							let arrayLength = 0;
+							if (node.children) {
+								// 过滤掉逗号节点，只计算实际的数组元素
+								arrayLength = node.children.filter((child: any) => 
+									child.type !== 'comma'
+								).length;
 							}
-						});
 
-						// 处理数组中的每个元素
-						let currentOffset = startOffset;
-						for (let i = 0; i < obj.length; i++) {
-							const item = obj[i];
-							if (item && typeof item === 'object') {
-								// 查找下一个对象或数组的开始位置
-								const searchStr = i === 0 ? '[' : ',';
-								currentOffset = text.indexOf(searchStr, currentOffset) + 1;
-								// 跳过空白字符和引号
-								while (currentOffset < text.length && (/\s/.test(text[currentOffset]) || text[currentOffset] === '"')) {
-									currentOffset++;
-								}
-
-								// 如果是数组，查找实际的 '[' 位置
-								if (Array.isArray(item)) {
-									const nextBracket = text.indexOf('[', currentOffset);
-									if (nextBracket !== -1) {
-										currentOffset = nextBracket;
+							// 添加装饰器
+							arrayDecorations.push({
+								range: new vscode.Range(pos.line, pos.character + 1, pos.line, pos.character + 1),
+								renderOptions: {
+									after: {
+										contentText: `(${arrayLength} items)`
 									}
 								}
-
-								findArrays(item, currentOffset);
-							}
+							});
 						}
-					} else if (obj && typeof obj === 'object') {
-						// 处理对象的每个属性
-						let currentOffset = startOffset;
-						for (const key in obj) {
-							const value = obj[key];
-							if (value && typeof value === 'object') {
-								// 查找属性值的开始位置
-								const keyStr = `"${key}"`;
-								currentOffset = text.indexOf(keyStr, currentOffset);
-								if (currentOffset !== -1) {
-									// 找到冒号后的位置
-									currentOffset = text.indexOf(':', currentOffset) + 1;
-									// 跳过空白字符
-									while (currentOffset < text.length && /\s/.test(text[currentOffset])) {
-										currentOffset++;
-									}
-									findArrays(value, currentOffset);
-								}
-							}
-						}
-					}
-				};
 
-				// 从文档开始位置开始查找
-				findArrays(jsonContent, 0);
+						// 递归处理子节点
+						if (node.children) {
+							node.children.forEach((child: any) => processNode(child));
+						}
+					};
+
+					processNode(tree);
+				}
 				
 				console.log('找到的数组装饰数量：', arrayDecorations.length);
 			} catch (e: any) {
@@ -222,26 +189,6 @@ async function updateDecorations() {
 	
 	editor.setDecorations(arrayLengthDecorator, arrayDecorations);
 	editor.setDecorations(fileSizeDecorator, fileSizeDecorations);
-}
-
-function getArrayContent(text: string, startOffset: number): string | null {
-	let brackets = 0;
-	let start = -1;
-	
-	for (let i = startOffset; i < text.length; i++) {
-		if (text[i] === '[') {
-			if (start === -1) {
-				start = i;
-			}
-			brackets++;
-		} else if (text[i] === ']') {
-			brackets--;
-			if (brackets === 0 && start !== -1) {
-				return text.substring(start, i + 1);
-			}
-		}
-	}
-	return null;
 }
 
 function formatFileSize(bytes: number): string {
