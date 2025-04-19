@@ -75,6 +75,78 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		})
 	);
+
+	// 注册美化预览命令
+	let disposable = vscode.commands.registerCommand('json-len.beautifyPreview', async () => {
+		const editor = vscode.window.activeTextEditor;
+		if (!editor || editor.document.languageId !== 'json') {
+			return;
+		}
+
+		const text = editor.document.getText().trim();
+		if (!text) {
+			return;
+		}
+
+		try {
+			const jsonObj = JSON.parse(text);
+			const beautifiedJson = JSON.stringify(jsonObj, null, 2);
+
+			// 如果内容没有变化，不需要进行操作
+			if (text === beautifiedJson) {
+				const currentLanguage = vscode.env.language.toLowerCase();
+				const message = currentLanguage.startsWith('zh') ? 
+					'JSON 已经是格式化的状态' : 
+					'JSON is already formatted';
+				vscode.window.showInformationMessage(message);
+				return;
+			}
+
+			// 创建预览
+			const previewDoc = await vscode.workspace.openTextDocument({
+				content: beautifiedJson,
+				language: 'json'
+			});
+
+			// 显示预览
+			await vscode.window.showTextDocument(previewDoc, {
+				viewColumn: vscode.ViewColumn.Beside,
+				preview: true
+			});
+
+			// 询问是否替换原内容
+			const currentLanguage = vscode.env.language.toLowerCase();
+			const replaceMessage = currentLanguage.startsWith('zh') ? 
+				'是否用格式化后的内容替换原内容？' : 
+				'Do you want to replace the original content with the formatted JSON?';
+			const replaceButton = currentLanguage.startsWith('zh') ? '替换' : 'Replace';
+			const keepButton = currentLanguage.startsWith('zh') ? '保持原样' : 'Keep Original';
+
+			const choice = await vscode.window.showInformationMessage(
+				replaceMessage,
+				replaceButton,
+				keepButton
+			);
+
+			if (choice === replaceButton) {
+				await editor.edit(editBuilder => {
+					const fullRange = new vscode.Range(
+						editor.document.positionAt(0),
+						editor.document.positionAt(text.length)
+					);
+					editBuilder.replace(fullRange, beautifiedJson);
+				});
+			}
+		} catch (error) {
+			const currentLanguage = vscode.env.language.toLowerCase();
+			const errorMessage = currentLanguage.startsWith('zh') ? 
+				'无效的 JSON 格式' : 
+				'Invalid JSON format';
+			vscode.window.showErrorMessage(errorMessage);
+		}
+	});
+
+	context.subscriptions.push(disposable);
 }
 
 async function updateDecorations() {
@@ -89,6 +161,93 @@ async function updateDecorations() {
 	const fileSizeDecorations: vscode.DecorationOptions[] = [];
 
 	try {
+		// 添加单行JSON检测逻辑
+		const lines = text.split('\n');
+		if (lines.length === 1 && text.trim()) {
+			try {
+				const jsonObj = JSON.parse(text);
+				const isSimpleJson = (text === '{}' || text === '[]') || 
+					(Array.isArray(jsonObj) && jsonObj.every(item => 
+						typeof item !== 'object' || item === null
+					)) ||
+					(!Array.isArray(jsonObj) && typeof jsonObj === 'object' && jsonObj !== null && 
+						Object.values(jsonObj).every(value => 
+							typeof value !== 'object' || value === null
+						));
+
+				if (!isSimpleJson) {
+					const currentLanguage = vscode.env.language.toLowerCase();
+					const formatMessage = currentLanguage.startsWith('zh') ? 
+						'检测到复杂的单行 JSON，是否需要格式化以便阅读？' : 
+						'Complex single-line JSON detected, would you like to format it for better readability?';
+					const previewButton = currentLanguage.startsWith('zh') ? '预览' : 'Preview';
+					const formatButton = currentLanguage.startsWith('zh') ? '格式化' : 'Format';
+					const keepButton = currentLanguage.startsWith('zh') ? '保持原样' : 'Keep Original';
+
+					const choice = await vscode.window.showInformationMessage(
+						formatMessage,
+						previewButton,
+						formatButton,
+						keepButton
+					);
+
+					if (choice === formatButton) {
+						const beautifiedJson = JSON.stringify(jsonObj, null, 2);
+						await editor.edit(editBuilder => {
+							const fullRange = new vscode.Range(
+								editor.document.positionAt(0),
+								editor.document.positionAt(text.length)
+							);
+							editBuilder.replace(fullRange, beautifiedJson);
+						});
+						return; // 格式化后退出当前函数
+					} else if (choice === previewButton) {
+						const beautifiedJson = JSON.stringify(jsonObj, null, 2);
+						const previewDoc = await vscode.workspace.openTextDocument({
+							content: beautifiedJson,
+							language: 'json'
+						});
+						// 保存预览编辑器的引用
+						const previewEditor = await vscode.window.showTextDocument(previewDoc, {
+							viewColumn: vscode.ViewColumn.Beside,
+							preview: true
+						});
+
+						const formatButton = vscode.env.language.toLowerCase().startsWith('zh') ? '格式化' : 'Format';
+						const formatChoice = await vscode.window.showInformationMessage(
+							vscode.env.language.toLowerCase().startsWith('zh') ? 
+								'是否要格式化原文件?' : 
+								'Do you want to format the original file?',
+							formatButton
+						);
+
+						if (formatChoice === formatButton) {
+							await editor.edit(editBuilder => {
+								const fullRange = new vscode.Range(
+									editor.document.positionAt(0),
+									editor.document.positionAt(text.length)
+								);
+								editBuilder.replace(fullRange, beautifiedJson);
+							});
+							// 清空预览内容后关闭
+							await previewEditor.edit(editBuilder => {
+								const fullRange = new vscode.Range(
+									previewDoc.positionAt(0),
+									previewDoc.positionAt(previewDoc.getText().length)
+								);
+								editBuilder.delete(fullRange);
+							});
+							await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+						}
+					}
+				}
+			} catch (e) {
+				// JSON解析错误，继续执行其他逻辑
+				console.log('JSON 解析错误:', e);
+			}
+		}
+
+		// 原有的文件大小检测和数组长度装饰器逻辑
 		const fileSize = Buffer.from(text).length;
 		const config = vscode.workspace.getConfiguration('jsonLen');
 		const maxFileSize = config.get<number>('maxFileSize') || 100;

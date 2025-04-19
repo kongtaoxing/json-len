@@ -1,4 +1,5 @@
 {
     "config.maxFileSize.description": "Maximum file size for array length rendering",
-    "config.fileSizeUnit.description": "Unit for maximum file size"
+    "config.fileSizeUnit.description": "Unit for maximum file size",
+    "command.beautifyPreview.title": "Preview Beautified JSON"
 } 

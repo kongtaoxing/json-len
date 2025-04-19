@@ -1,4 +1,5 @@
 {
     "config.maxFileSize.description": "数组长度渲染的最大文件大小",
-    "config.fileSizeUnit.description": "最大文件大小的单位"
+    "config.fileSizeUnit.description": "最大文件大小的单位",
+    "command.beautifyPreview.title": "预览格式化后的 JSON"
 } 

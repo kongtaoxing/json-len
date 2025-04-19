@@ -19,6 +19,12 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "commands": [
+      {
+        "command": "json-len.beautifyPreview",
+        "title": "%command.beautifyPreview.title%"
+      }
+    ],
     "configuration": {
       "title": "JSON Length Viewer",
       "properties": {
