@@ -1,38 +1,61 @@
 # JSON Array Length
 
-在 JSON 文件中显示折叠数组的长度和文件大小的 VS Code 扩展。
+[![Version](https://img.shields.io/visual-studio-marketplace/v/kongtaoxing.json-len)](https://marketplace.visualstudio.com/items?itemName=kongtaoxing.json-len)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/kongtaoxing.json-len)](https://marketplace.visualstudio.com/items?itemName=kongtaoxing.json-len)
+[![Downloads](https://img.shields.io/visual-studio-marketplace/d/kongtaoxing.json-len)](https://marketplace.visualstudio.com/items?itemName=kongtaoxing.json-len)
+[![Rating](https://img.shields.io/visual-studio-marketplace/r/kongtaoxing.json-len)](https://marketplace.visualstudio.com/items?itemName=kongtaoxing.json-len)
+[![License](https://img.shields.io/github/license/kongtaoxing/json-len)](https://github.com/kongtaoxing/json-len/blob/main/LICENSE)
+[![Issues](https://img.shields.io/github/issues/kongtaoxing/json-len)](https://github.com/kongtaoxing/json-len/issues)
 
-## 功能特点
+A VS Code extension that displays the length of folded arrays and file size in JSON files. 中文版 README 在[这里](./README.zh-CN.md)。
 
-- 自动显示折叠数组的长度
-- 在文件头部显示文件大小
-- 实时更新统计信息
-- 文件大小阈值限制，文件过大（默认100Mb）则提醒用户是否渲染，防止影响性能
+## Features
 
-## 使用方法
+- Automatically displays the length of folded arrays
+- Shows file size at the top of the file
+- Real-time statistics updates
+- File size threshold limit, prompting users whether to render when files are too large (default 100Mb) to prevent performance impact
+- JSON beautification with preview support
+  - Use the "Beautify Preview" button to format any JSON file with a side-by-side preview
+  - For single-line complex JSON files, automatic detection and formatting suggestions will be provided
 
-1. 打开任意 JSON 文件
-2. 折叠数组后会自动显示数组长度
-3. 文件顶部会显示当前文件大小
+## Usage
 
-## 示例
+1. Open any JSON file
+2. Array lengths will be automatically displayed when collapsed
+3. File size will be shown at the top of the file
+4. Click the "Beautify Preview" button in the editor to format JSON with preview
+5. For single-line complex JSON files, you'll receive a prompt to format for better readability
 
-### 使用示例
+## Examples
 
-![使用示例](images/screenshot.png)
+### Usage Example
 
-### 文件大小阈值限制
+![Usage Example](images/screenshot.png)
 
-![设置](images/settings.png)
+### File Size Threshold Settings
 
-## 更新日志
+![Settings](images/settings.png)
 
-见 [ChangeLog](./CHANGELOG.md)
+### Beautify Preview
 
-## 问题反馈
+before:
+![Beautify Preview](images/preview_before.png)
 
-如果您发现任何问题或有建议，请在 [GitHub Issues](https://github.com/kongtaoxing/json-len/issues) 上提出。
+formating:
+![formating](images/formating.png)
 
-## 许可证
+formated:
+![formated](images/formated.png)
+
+## Changelog
+
+See [ChangeLog](./CHANGELOG.md)
+
+## Issues
+
+If you find any issues or have suggestions, please raise them in [GitHub Issues](https://github.com/kongtaoxing/json-len/issues).
+
+## License
 
 MIT

@@ -163,10 +163,10 @@ async function updateDecorations() {
 	try {
 		// 添加单行JSON检测逻辑
 		const lines = text.split('\n');
-		if (lines.length === 1 && text.trim()) {
+		if ((lines.length === 2 && !lines[1].trim() || lines.length === 1) && text.trim()) {
 			try {
-				const jsonObj = JSON.parse(text);
-				const isSimpleJson = (text === '{}' || text === '[]') || 
+				const jsonObj = JSON.parse(text.trim());
+				const isSimpleJson = (text.trim() === '{}' || text.trim() === '[]') || 
 					(Array.isArray(jsonObj) && jsonObj.every(item => 
 						typeof item !== 'object' || item === null
 					)) ||
